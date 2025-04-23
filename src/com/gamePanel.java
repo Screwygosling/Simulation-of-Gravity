@@ -10,6 +10,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 import javax.swing.*;
 
@@ -19,6 +21,8 @@ public class gamePanel extends JPanel implements Runnable {
     private final int WIN_HEIGHT = WIN_WIDTH;
     private final Dimension window = new Dimension(WIN_HEIGHT, WIN_WIDTH);
 
+    private java.util.List<CelestialObject> celestialObjects = new java.util.ArrayList<>();
+
     int distance;
     int m1; 
     int m2;
@@ -26,13 +30,14 @@ public class gamePanel extends JPanel implements Runnable {
     String color;
     Thread thread;
 
-    CelestialObject sun, earth, mars;
+    CelestialObject sun, earth, mars, Planet;
 
     gamePanel() {
         this.setPreferredSize(window);
         this.setLayout(new BorderLayout());
         this.setFocusable(true);
         this.setBackground(Color.BLACK);
+        this.addKeyListener(new ActionListener());
         createObject();
 
         thread = new Thread(this);
@@ -40,17 +45,24 @@ public class gamePanel extends JPanel implements Runnable {
     }
 
     public void createObject() {
-        sun = new CelestialObject((WIN_HEIGHT / 2), (WIN_WIDTH / 2), 0, 0, 1000, 20, 1);
-        earth = new CelestialObject((WIN_HEIGHT / 2) - (sun.x - 150), sun.y, 0, 2.5, 10, 10, 2);
-        mars = new CelestialObject((WIN_HEIGHT / 2) + (sun.x - 200), sun.y, 0, 10.0, 5, 8, 3);
+        sun = new CelestialObject((WIN_HEIGHT / 2), (WIN_WIDTH / 2), 0, 0, 1000, 30, 1);
+        earth = new CelestialObject(sun.x - 150, sun.y, 0, -2.5, 60, 10, 2);
+        mars = new CelestialObject(sun.x - 228, sun.y, 0, -2.0, 30, 8, 3);
+
+        celestialObjects.add(sun);
+        celestialObjects.add(earth);
+        celestialObjects.add(mars);
+    }
+
+    public void createNewObject() {
+        Planet = new CelestialObject((WIN_HEIGHT / 2), (WIN_WIDTH / 2), 0, 0, 80, 10, 4);
+        celestialObjects.add(Planet);
     }
 
     public void applyGravity(CelestialObject a, CelestialObject b) {
 
         // newton's law of gravitational rotation
-
-        //this is for the sun and earth
-        double G = 1; //6.67430e-11 m^3 kg^-1 s^-2
+        double G = 2; //6.67430e-11 m^3 kg^-1 s^-2
         double dx = b.x - a.x;
         double dy = b.y - a.y;
         double distance = Math.sqrt(dx * dx + dy * dy);
@@ -70,22 +82,21 @@ public class gamePanel extends JPanel implements Runnable {
 
     public void update() {
 
-        CelestialObject[] celestialObjects = {sun, earth, mars};
-
         // this for nested for loop iterates through the celestial object array list twice and applies the method applyGravity to each celestial body
-        for (int i = 0; i < celestialObjects.length; i++){
-            for (int j = 0; j < celestialObjects.length; j++) {
+        for (int i = 0; i < celestialObjects.size(); i++){
+            for (int j = 0; j < celestialObjects.size(); j++) {
                 if (i == j) continue;
-                applyGravity(celestialObjects[i], celestialObjects[j]);
+                applyGravity(celestialObjects.get(i), celestialObjects.get(j));
             }
         }
 
 
-        // this for loop moves the celestial bodies based on the applyGravity method above this
+        // this for loop moves the celestial bodies based on the applyGravity method above this 
         for (CelestialObject obj: celestialObjects) {
             obj.x += obj.vx;
             obj.y += obj.vy;
             obj.setLocation((int) obj.x, (int) obj.y);
+            obj.updateTrail();
         }
 
     }
@@ -111,8 +122,16 @@ public class gamePanel extends JPanel implements Runnable {
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        sun.draw(g);
-        earth.draw(g);
-        mars.draw(g);
+        for (CelestialObject obj : celestialObjects) {
+            obj.draw(g);
+        }
+    }
+
+    public class ActionListener extends KeyAdapter{
+        public void keyPressed(KeyEvent e){
+            if (e.getKeyCode() == KeyEvent.VK_W) {
+                createNewObject();
+            }
+        }
     }
 }
